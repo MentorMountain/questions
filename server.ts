@@ -1,7 +1,7 @@
 import express, { Express } from "express";
 
 const app: Express = express();
-const port = 9999;
+const port = 8080;
 const hostname = process.env.hostname || "0.0.0.0";
 
 app.use(express.json());
