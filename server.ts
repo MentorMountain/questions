@@ -67,7 +67,44 @@ app.post("/api/questions", (req, res) => {
 // Get question thread, given the thread's id
 //params: id in param of request
 
-//Given a question id,returns the content of that question, followed by the questionResponses
+//Given a question id,returns the content of that question, 
+app.get("/api/questions/:questionUUID", (req, res) => {
+  return firestore.collection("questions")
+    .doc(req.params.questionUUID)
+    .get()
+    .then((doc: any) => {
+      //HHH TODO: make sure Doc is of type Questions
+      return res.status(200).send(doc);
+    }).catch((err:any) => {
+      console.error(err);
+      return res.status(404).send({
+        error: 'Unable to retrieve the Question',
+        err
+      });
+    });
+});
+
+//Given a question id, returns the collection of questionResponses
+app.get("/api/questions/:questionUUID/responses", (req, res) => {
+  return firestore.collection("questionResponses")
+      .where("questionUUID", "==",  req.params.questionUUID)
+      .get()
+      .then((qResponses: any) => { //QuestionResponse[]
+        if (!qResponses) {
+          return res.status(404).send({
+            error: 'Unable to find the questionResponses'
+          });
+        }
+        return res.status(200).send(qResponses);
+      }).catch((err:any) => {
+        console.error(err);
+        return res.status(404).send({
+          error: 'Unable to retrieve the Question',
+          err
+        });
+      });
+});
+
 app.get("/api/questions/:questionUUID", (req, res) => {
   return firestore.collection("questions")
     .doc(req.params.questionUUID)
@@ -90,7 +127,7 @@ app.get("/api/questions/:questionUUID", (req, res) => {
           err
         });
       });
-      //HHH TODO: make sure Doc is of type Questions
+      
       if (!doc) {
         return res.status(404).send({
           error: 'Unable to find the question'
