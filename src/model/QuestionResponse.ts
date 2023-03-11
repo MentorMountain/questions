@@ -1,7 +1,9 @@
+import { Timestamp } from "@google-cloud/firestore";
+
 export interface QuestionResponse {
-  uuid: string;
+  uuid?: string;
   questionUUID: string;
   authorUUID: string;
-  date: number;
+  date: Timestamp;
   message: string;
 }

@@ -1,8 +1,10 @@
 import express, { Express } from "express";
 import cors from "cors";
-import Firestore from "@google-cloud/firestore";
+import { Firestore, Timestamp } from "@google-cloud/firestore";
 import { Question } from "./src/model/Question";
 import { QuestionResponse } from "./src/model/QuestionResponse";
+
+//const Firestore = require('@google-cloud/firestore');
 
 
 //TODO when hosting to cloud run:
@@ -24,8 +26,25 @@ app.use(cors({
   origin: '*'
 }));
 
+/******************************************************************************
+ *                             Datastore Constants                            *
+ ******************************************************************************/
+// Firestore states field value length limit for indexed fields as 1,500 bytes
+// - UTF-8 chars take up 2 bytes each: therefore 750 character length limit
+// If you want to increase this limit, verify that we are using NON-INDEXED...
+// ...field values 
+// See: https://firebase.google.com/docs/firestore/quotas#limits
+const GCLOUD_STRING_LENGTH_LIMIT = 750;
+// DB_STR_LIMIT slightly shorter for safety
+const DB_STR_LIMIT = GCLOUD_STRING_LENGTH_LIMIT - 50;
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+/******************************************************************************
+ *                                API Endpoints                               *
+ ******************************************************************************/
+
 
 app.use("/", (req, _, next) => {
   console.log("\n> Request URL:", req.originalUrl, "| Method:", req.method);
@@ -42,9 +61,9 @@ app.post("/api/questions", (req, res) => {
     title: string;
     content: string;
   */
-  const created = new Date().getTime();
+  // uuid left blank for now, generated in firestore.
+  const created:Timestamp = Timestamp.now() 
   const submissionData:Question = {
-    // uuid left blank for now
     authorUUID: "123", // filler authorUUID
     date: created, //date
     title: req.body.title,//title
@@ -53,7 +72,7 @@ app.post("/api/questions", (req, res) => {
       firestore.collection("questions").add({
         submissionData
       }).then((doc: any) => {
-        console.info('stored new doc id#', doc.id);
+        console.info('stored new doc', doc);
         return res.status(200).send(doc);
       }).catch((err: any) => {
         console.error(err);
@@ -84,9 +103,28 @@ app.get("/api/questions/:questionUUID", (req, res) => {
     });
 });
 
-//Given a question id, returns the collection of questionResponses
+//Get QuestionResponses
+//Given a Question id, returns the collection of related Responses
 app.get("/api/questions/:questionUUID/responses", (req, res) => {
-  return firestore.collection("questionResponses")
+  const qResponseArray:any = [];
+
+  // return firestore.collection("QuestionResponses")
+  // .doc("7FHw5klnLG3Uz2uA7P5s")
+  // .get()
+  // .then((qResponses: any) => { //QuestionResponse[]
+  //   return res.status(200).send(
+  //     {
+  //       qResponseObject: qResponses,
+  //     });
+  // }).catch((err:any) => {
+  //   console.error(err);
+  //   return res.status(404).send({
+  //     error: 'Unable to retrieve the QuestionResponse',
+  //     err
+  //   });
+  // });
+
+  return firestore.collection("QuestionResponses")
       .where("questionUUID", "==",  req.params.questionUUID)
       .get()
       .then((qResponses: any) => { //QuestionResponse[]
@@ -95,7 +133,25 @@ app.get("/api/questions/:questionUUID/responses", (req, res) => {
             error: 'Unable to find the questionResponses'
           });
         }
-        return res.status(200).send(qResponses);
+        //7FHw5klnLG3Uz2uA7P5s
+        console.log(qResponses.data());
+        console.log(qResponses);
+        qResponses.forEach((qResponse: any) => {
+          //push each questionResponse to the array we will return
+          qResponseArray.push(//qResponse.message
+          {
+            message: qResponse.message,
+            questionUUID: qResponse.questionUUID,
+            date: qResponse.date,
+            authorUUID: qResponse.authorUUID,
+          } 
+          );
+        });
+        return res.status(200).send(
+          {
+            qResponseObject: qResponses,
+            responses: qResponseArray,
+          });
       }).catch((err:any) => {
         console.error(err);
         return res.status(404).send({
@@ -105,74 +161,69 @@ app.get("/api/questions/:questionUUID/responses", (req, res) => {
       });
 });
 
-app.get("/api/questions/:questionUUID", (req, res) => {
-  return firestore.collection("questions")
+// POST QuestionResponse
+app.post("/api/questions/:questionUUID/responses", (req, res) => {
+  //TODO: check to make sure question actually exists you are linking a response.
+  //
+  const uuid = req.params.questionUUID;
+  //Get question from id
+  firestore.collection("questions")
     .doc(req.params.questionUUID)
     .get()
     .then((doc: any) => {
-      //get all associated QuestionResponses given a Question uuid
-      firestore.collection("questionResponses")
-      .where(doc.questionUUID == req.params.questionUUID)
-      .get()
-      .then((doc: QuestionResponse[]) => {
-        if (!doc) {
-          return res.status(404).send({
-            error: 'Unable to find the questionResponses'
-          });
+      //if question has a title, then get continue to post a response
+      //return res.status(200).send(doc);//HHH TESTING
+      if(doc._fieldsProto.title.stringValue != undefined || doc.title.stringValue != undefined){
+        //continue to post a Qresponse
+        const created:Timestamp = Timestamp.now() 
+        const submissionData:QuestionResponse = {
+          questionUUID: req.params.questionUUID,
+          authorUUID: "123", // filler authorUUID for version 1
+          date: created, 
+          message: req.body.message,
         }
-      }).catch((err:any) => {
-        console.error(err);
-        return res.status(404).send({
-          error: 'Unable to retrieve the Question',
-          err
-        });
-      });
-      
-      if (!doc) {
-        return res.status(404).send({
-          error: 'Unable to find the question'
-        });
-      }
-      //const data = doc.data();
-      if (!data) {
-        return res.status(404).send({
-          error: 'Found document is empty'
+        firestore.collection("QuestionResponses").add({
+          submissionData
+        }).then((doc: any) => {
+          console.info('stored new QuestionResponse', doc);
+          return res.status(200).send();
+        }).catch((err: any) => {
+          console.error(err);
+          return res.status(404).send({
+            error: 'unable to upload new QuestionResponse',
+            err
+          });
         });
       }
-      return res.status(200).send(data);
+      else{
+        //otherwise just return, as the question doesn't exist
+        return res.status(404).send({
+          error: 'Invalid Question to add response to',
+        });
+      }
     }).catch((err:any) => {
       console.error(err);
       return res.status(404).send({
-        error: 'Unable to retrieve the Question',
+        error: 'Unable to validate Question. Try checking that your question ID exists',
         err
       });
     });
-});
-
-// Respond to question
-app.post("/api/questions/:questionUUID/responses", (req, res) => {
-  const uuid = req.params.questionUUID;
-
-  /* Validation
-    - Ensure question exists
+  /* Validation Todos for v2
     - Ensure responder is a mentor
   */
-
-  res.json("UNIMPLEMENTED");
 });
 
-// Get questions UUIDs
+// Get all question UUIDs
 app.get("/api/questions", (req, res) => {
-  const questionUUIDs = [];
+  const questionUUIDs:any = [];
   //query firestore for all question ids, returning them in an array
-
   return firestore.collection("questions")
-    .select("id")//only return the id column
+    .get()
     .then((data : any) => {
-      //maybe need to parse data here?
-
-      //get question ids from data
-      res.status(200).json(data);
+      data.forEach((doc: any) => {
+        questionUUIDs.push(doc.id);
+      });
+      res.status(200).json(questionUUIDs);
     }).catch((err : any) => {
       console.error(err);
       res.status(404).send({
