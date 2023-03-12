@@ -4,6 +4,6 @@ export interface QuestionResponse {
   uuid?: string;
   questionUUID: string;
   authorUUID: string;
-  date: Timestamp;
+  date: number;
   message: string;
 }

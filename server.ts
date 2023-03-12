@@ -53,7 +53,7 @@ app.post("/api/questions", (req, res) => {
     content: string;
   */
   // uuid left blank for now, generated in firestore.
-  const created: Timestamp = Timestamp.now()
+  const created: number = Date.now();
   const submissionData: Question = {
     authorUUID: "123", // TODO: set proper authorUUID once users service is online
     date: created, //date
@@ -92,7 +92,7 @@ app.get("/api/questions/:questionUUID", (req, res) => {
     });
 });
 
-//Get QuestionResponses
+//Get all QuestionResponses
 //Given a Question id, returns the collection of related Responses
 app.get("/api/questions/:questionUUID/responses", (req, res) => {
   const qResponseArray: QuestionResponse[] = [];
@@ -109,6 +109,7 @@ app.get("/api/questions/:questionUUID/responses", (req, res) => {
         //push each questionResponse to the array we will return
         const data = qResponse.data();
         qResponseArray.push({
+          uuid: qResponse.id,
           message: data.message,
           questionUUID: data.questionUUID,
           date: data.date,
@@ -117,12 +118,7 @@ app.get("/api/questions/:questionUUID/responses", (req, res) => {
       });
       const responseData: string = JSON.stringify(qResponseArray);
       console.log('send data in response:', responseData);
-      //return res.status(200).send(responseData); //uncomment if you only want the Array.
-      return res.status(200).send(
-        {
-          qResponseObject: qResponses,
-          responses: responseData,
-        });
+      return res.status(200).send(responseData);
     }).catch((err: any) => {
       console.error(err);
       return res.status(404).send({
@@ -141,7 +137,7 @@ app.post("/api/questions/:questionUUID/responses", (req, res) => {
     .then((doc: any) => {
       if (doc.exists && doc.get("title")) {
         //continue to post a Qresponse
-        const created: Timestamp = Timestamp.now();
+        const created: number = Date.now();
         const submissionData: QuestionResponse = {
           questionUUID: req.params.questionUUID,
           authorUUID: "123",// filler authorUUID for version 1
