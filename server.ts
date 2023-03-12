@@ -143,7 +143,7 @@ app.post("/api/questions/:questionID/responses", (req: Request, res: Response) =
       if (doc.exists) {
         //continue to post a Qresponse
         const created: number = Date.now();
-        const message: string = cleanRequestField(req.body.mesage);
+        const message: string = cleanRequestField(req.body.message);
         const submissionData: QuestionResponse = {
           questionID: questionId,
           authorID: "123",// filler authorID for version 1
@@ -170,7 +170,7 @@ app.post("/api/questions/:questionID/responses", (req: Request, res: Response) =
     })
     .catch((err: any) => {
       console.error(err);
-      return res.status(400).send(err);
+      return res.status(400).send(err.textPayload);
     });
   /* Validation Todos for v2
   - Ensure responder is a mentor
