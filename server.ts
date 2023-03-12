@@ -140,7 +140,7 @@ app.post("/api/questions/:questionID/responses", (req: Request, res: Response) =
     .doc(questionId)
     .get()
     .then((doc: DocumentSnapshot) => {
-      if (doc.exists && doc.get("title")) {
+      if (doc.exists) {
         //continue to post a Qresponse
         const created: number = Date.now();
         const message: string = cleanRequestField(req.body.mesage);
@@ -158,15 +158,19 @@ app.post("/api/questions/:questionID/responses", (req: Request, res: Response) =
           })
           .catch((err: any) => {
             console.error(err);
-            return res.status(400).send();
+            return res.status(400).send({
+              error:
+                "Unable to add new Response.",
+              err,
+            });
           });
       } else {
-        return res.status(400).send();
+        return res.status(404).send("Question Not Found");
       }
     })
     .catch((err: any) => {
       console.error(err);
-      return res.status(400).send();
+      return res.status(400).send(err);
     });
   /* Validation Todos for v2
   - Ensure responder is a mentor
