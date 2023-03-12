@@ -95,8 +95,7 @@ app.get("/api/questions/:questionID", (req: Request, res: Response) => {
     .doc(req.params.questionID)
     .get()
     .then((doc: DocumentSnapshot) => {
-      //HHH TODO: make sure Doc is of type Question
-      return res.status(201).send(doc);
+      return res.status(200).send(doc);
     }).catch((err: any) => {
       console.error(err);
       return res.status(400).send();
@@ -127,7 +126,7 @@ app.get("/api/questions/:questionID/responses", (req: Request, res: Response) =>
       });
       const responseData: string = JSON.stringify(qResponseArray);
       console.log('send data in response:', responseData);
-      return res.status(201).send(responseData);
+      return res.status(200).send(responseData);
     }).catch((err: any) => {
       console.error(err);
       return res.status(400).send();
@@ -185,7 +184,7 @@ app.get("/api/questions", (_: Request, res: Response) => {
       data.forEach((doc: QueryDocumentSnapshot) => {
         questionIDs.push(doc.id);
       });
-      res.status(201).json(questionIDs);
+      res.status(200).json(questionIDs);
     }).catch((err: any) => {
       console.error(err);
       res.status(400).send();
