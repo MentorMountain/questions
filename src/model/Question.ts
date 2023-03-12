@@ -1,5 +1,3 @@
-import { Timestamp } from "@google-cloud/firestore";
-
 export interface Question {
     id?: string;
     authorID: string;
