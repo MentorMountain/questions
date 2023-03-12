@@ -7,7 +7,7 @@ import { QuestionResponse } from "./src/model/QuestionResponse";
 //TODO when hosting to cloud run:
 //Add your credentials to process.env, e.g. the ProjectId
 const firestore = new Firestore({
-  projectId: process.env.ProjectId,
+  projectId: process.env.PROJECT_ID,
   timestampsInSnapshots: true
 });
 
@@ -46,16 +46,16 @@ app.use("/", (req, _, next) => {
 app.post("/api/questions", (req, res) => {
   /* Validation
       - TODO: Ensure responder is a student
-      uuid: string;
-    authorUUID: string;
-    date: number;
-    title: string;
-    content: string;
+      id: string;
+      authorID: string;
+      date: number;
+      title: string;
+      content: string;
   */
-  // uuid left blank for now, generated in firestore.
+  // id left blank for now, generated in firestore.
   const created: number = Date.now();
   const submissionData: Question = {
-    authorUUID: "123", // TODO: set proper authorUUID once users service is online
+    authorID: "123", // TODO: set proper authorID once users service is online
     date: created, //date
     title: req.body.title,//title
     content: req.body.content //content
@@ -64,7 +64,7 @@ app.post("/api/questions", (req, res) => {
     submissionData
   ).then((doc: any) => {
     console.info('stored new doc', doc);
-    return res.status(200).send(doc);
+    return res.status(200).send();
   }).catch((err: any) => {
     console.error(err);
     return res.status(404).send({
@@ -76,9 +76,9 @@ app.post("/api/questions", (req, res) => {
 
 // GET question title and content, given the question's id
 //params: id in param of request
-app.get("/api/questions/:questionUUID", (req, res) => {
+app.get("/api/questions/:questionID", (req, res) => {
   return firestore.collection("questions")
-    .doc(req.params.questionUUID)
+    .doc(req.params.questionID)
     .get()
     .then((doc: any) => {
       //HHH TODO: make sure Doc is of type Question
@@ -94,10 +94,10 @@ app.get("/api/questions/:questionUUID", (req, res) => {
 
 //Get all QuestionResponses
 //Given a Question id, returns the collection of related Responses
-app.get("/api/questions/:questionUUID/responses", (req, res) => {
+app.get("/api/questions/:questionID/responses", (req, res) => {
   const qResponseArray: QuestionResponse[] = [];
   firestore.collection("QuestionResponses")
-    .where("questionUUID", "==", req.params.questionUUID)
+    .where("questionID", "==", req.params.questionID)
     .get()
     .then((qResponses: QuerySnapshot) => {
       if (qResponses.docs.length === 0) {
@@ -109,11 +109,11 @@ app.get("/api/questions/:questionUUID/responses", (req, res) => {
         //push each questionResponse to the array we will return
         const data = qResponse.data();
         qResponseArray.push({
-          uuid: qResponse.id,
+          id: qResponse.id,
           message: data.message,
-          questionUUID: data.questionUUID,
+          questionID: data.questionID,
           date: data.date,
-          authorUUID: data.authorUUID,
+          authorID: data.authorID,
         });
       });
       const responseData: string = JSON.stringify(qResponseArray);
@@ -129,18 +129,18 @@ app.get("/api/questions/:questionUUID/responses", (req, res) => {
 });
 
 // POST QuestionResponse
-app.post("/api/questions/:questionUUID/responses", (req, res) => {
-  const uuid = req.params.questionUUID;
+app.post("/api/questions/:questionID/responses", (req, res) => {
+  const id = req.params.questionID;
   firestore.collection("questions")
-    .doc(req.params.questionUUID)
+    .doc(id)
     .get()
     .then((doc: any) => {
       if (doc.exists && doc.get("title")) {
         //continue to post a Qresponse
         const created: number = Date.now();
         const submissionData: QuestionResponse = {
-          questionUUID: req.params.questionUUID,
-          authorUUID: "123",// filler authorUUID for version 1
+          questionID: id,
+          authorID: "123",// filler authorID for version 1
           date: created,
           message: req.body.message,
         };
@@ -177,17 +177,17 @@ app.post("/api/questions/:questionUUID/responses", (req, res) => {
 */
 });
 
-// GET all Question UUIDs
+// GET all Question IDs
 app.get("/api/questions", (req, res) => {
-  const questionUUIDs: any = [];
+  const questionIDs: any = [];
   //query firestore for all question ids, returning them in an array
   return firestore.collection("questions")
     .get()
     .then((data: any) => {
       data.forEach((doc: any) => {
-        questionUUIDs.push(doc.id);
+        questionIDs.push(doc.id);
       });
-      res.status(200).json(questionUUIDs);
+      res.status(200).json(questionIDs);
     }).catch((err: any) => {
       console.error(err);
       res.status(404).send({
