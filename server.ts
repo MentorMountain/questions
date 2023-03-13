@@ -72,7 +72,7 @@ app.post("/api/questions", (req: Request, res: Response) => {
   const content: string = cleanRequestField(req.body.content);
 
   const submissionData: Question = {
-    authorID: "123", // TODO: set proper authorID once users service is online
+    authorID: req.body.authorID || "Anonymous",
     date: created,
     title: title,
     content: content
@@ -111,7 +111,7 @@ app.get("/api/questions/:questionID/responses", (req: Request, res: Response) =>
     .get()
     .then((qResponses: QuerySnapshot) => {
       if (qResponses.docs.length === 0) {
-        return res.status(400).send();
+        return res.status(200).send([]);
       }
       qResponses.forEach((qResponse: QueryDocumentSnapshot) => {
         //push each questionResponse to the array we will return
@@ -146,7 +146,7 @@ app.post("/api/questions/:questionID/responses", (req: Request, res: Response) =
         const message: string = cleanRequestField(req.body.message);
         const submissionData: QuestionResponse = {
           questionID: questionId,
-          authorID: "123",// filler authorID for version 1
+          authorID: req.body.authorID || "Anonymous",
           date: created,
           message: message,
         };
