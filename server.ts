@@ -24,7 +24,7 @@ const firestore: Firestore = new Firestore({
 });
 
 const QUESTIONS_COLLECTION: string = "Questions";
-const QUESTION_RESPONSES_COLLECTION: string = "QuestionResponses";
+const QUESTION_RESPONSES_COLLECTION: string = process.env.DB_COLLECTION_NAME || "QuestionResponses";
 
 const app: Express = express();
 const port: number = (process.env.PORT && parseInt(process.env.PORT)) || 8080;
