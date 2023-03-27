@@ -17,6 +17,12 @@ const QUESTION_RESPONSES_COLLECTION: string = "QuestionResponses"
 const app: Express = express();
 const port: number = (process.env.PORT && parseInt(process.env.PORT)) || 8080;
 
+app.get("/api/health", (_: Request, res: Response) => {
+  res.json({
+    health: "OK",
+  });
+});
+
 // https://www.npmjs.com/package/cors
 const whitelist = [
   "https://mentormountain.ca",
@@ -208,12 +214,6 @@ app.get("/api/questions", (_: Request, res: Response) => {
       console.error(err);
       res.status(400).send();
     });
-});
-
-app.get("/api/health", (_: Request, res: Response) => {
-  res.json({
-    health: "OK",
-  });
 });
 
 app.listen(port, () => {
