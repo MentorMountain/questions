@@ -11,7 +11,7 @@ const firestore: Firestore = new Firestore({
   timestampsInSnapshots: true
 });
 
-const QUESTIONS_COLLECTION: string = "Questions"
+const QUESTIONS_COLLECTION: string = process.env.DB_COLLECTION_NAME || "Questions"
 const QUESTION_RESPONSES_COLLECTION: string = "QuestionResponses"
 
 const app: Express = express();
