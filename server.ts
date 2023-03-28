@@ -11,6 +11,7 @@ import {
 import { Question } from "./src/model/Question";
 import { QuestionResponse } from "./src/model/QuestionResponse";
 import {
+  LoginTokenizedRequest,
   LoginTokenParameters,
   validateLoginToken,
 } from "cmpt474-mm-jwt-middleware";
@@ -40,14 +41,13 @@ app.get("/api/health", cors({ origin: "*" }), (_: Request, res: Response) => {
 
 const corsOptions = {
   origin: function (origin: any, callback: any) {
-    if ([ENV.WEBAPP_DOMAIN, 'http://localhost:3000'].indexOf(origin) !== -1) {
+    if ([ENV.WEBAPP_DOMAIN, "http://localhost:3000"].indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
     }
   },
 };
-
 
 app.use(cors(corsOptions));
 
@@ -94,26 +94,28 @@ app.use(LOGIN_TOKEN_VALIDATOR);
 
 //POST new Question
 app.post("/api/questions", (req: Request, res: Response) => {
+  const request = req as LoginTokenizedRequest;
   /* Validation
       - TODO: Ensure responder is a student
       id: string;
-      authorID: string;
       date: number;
       title: string;
       content: string;
   */
+
   // id left blank for now, generated in firestore.
   const created: number = Date.now();
   // Cleaning up data before inserting into DB
-  const title: string = cleanRequestField(req.body.title);
-  const content: string = cleanRequestField(req.body.content);
+  const title: string = cleanRequestField(request.body.title);
+  const content: string = cleanRequestField(request.body.content);
 
   const submissionData: Question = {
-    authorID: req.body.authorID || "Anonymous",
+    authorID: request.user.computingID,
     date: created,
     title: title,
     content: content,
   };
+
   firestore
     .collection(QUESTIONS_COLLECTION)
     .add(submissionData)
@@ -183,7 +185,9 @@ app.get(
 app.post(
   "/api/questions/:questionID/responses",
   (req: Request, res: Response) => {
+    const request: LoginTokenizedRequest = req as LoginTokenizedRequest;
     const questionId: string = req.params.questionID;
+
     firestore
       .collection(QUESTIONS_COLLECTION)
       .doc(questionId)
@@ -195,7 +199,7 @@ app.post(
           const message: string = cleanRequestField(req.body.message);
           const submissionData: QuestionResponse = {
             questionID: questionId,
-            authorID: req.body.authorID || "Anonymous",
+            authorID: request.user.computingID,
             date: created,
             message: message,
           };
