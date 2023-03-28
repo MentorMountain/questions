@@ -32,7 +32,7 @@ const port: number = (process.env.PORT && parseInt(process.env.PORT)) || 8080;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get("/api/health", (_: Request, res: Response) => {
+app.get("/api/health", cors({ origin: "*" }), (_: Request, res: Response) => {
   res.json({
     health: "OK",
   });
