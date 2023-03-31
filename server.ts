@@ -102,6 +102,11 @@ app.post("/api/questions", (req: Request, res: Response) => {
       title: string;
       content: string;
   */
+  //systemRequest.user.username
+  if (request.user.role !== "student") {
+    //only students can post questions
+    return res.status(403).send("Only Students can post questions.");
+  }
 
   // id left blank for now, generated in firestore.
   const created: number = Date.now();
@@ -110,7 +115,7 @@ app.post("/api/questions", (req: Request, res: Response) => {
   const content: string = cleanRequestField(request.body.content);
 
   const submissionData: Question = {
-    authorID: request.user.computingID,
+    authorID: request.user.username,
     date: created,
     title: title,
     content: content,
@@ -188,6 +193,10 @@ app.post(
     const request: LoginTokenizedRequest = req as LoginTokenizedRequest;
     const questionId: string = req.params.questionID;
 
+    if (request.user.role !== "mentor") {
+      return res.status(403).send("Only Mentors can post responses to questions.");
+    }
+
     firestore
       .collection(QUESTIONS_COLLECTION)
       .doc(questionId)
@@ -199,7 +208,7 @@ app.post(
           const message: string = cleanRequestField(req.body.message);
           const submissionData: QuestionResponse = {
             questionID: questionId,
-            authorID: request.user.computingID,
+            authorID: request.user.username,
             date: created,
             message: message,
           };
