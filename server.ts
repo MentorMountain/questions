@@ -103,7 +103,7 @@ app.post("/api/questions", (req: Request, res: Response) => {
       content: string;
   */
   //systemRequest.user.username
-  if (request.user.role != "student") {
+  if (request.user.role !== "student") {
     //only students can post questions
     return res.status(403).send("Only Students can post questions.");
   }
@@ -193,7 +193,7 @@ app.post(
     const request: LoginTokenizedRequest = req as LoginTokenizedRequest;
     const questionId: string = req.params.questionID;
 
-    if (request.user.role != "mentor") {
+    if (request.user.role !== "mentor") {
       return res.status(403).send("Only Mentors can post responses to questions.");
     }
 
