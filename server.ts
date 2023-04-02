@@ -17,8 +17,6 @@ import {
 } from "cmpt474-mm-jwt-middleware";
 import ENV from "./env";
 
-//TODO when hosting to cloud run:
-//Add your credentials to process.env, e.g. the ProjectId
 const firestore: Firestore = new Firestore({
   projectId: ENV.PROJECT_ID,
   timestampsInSnapshots: true,
@@ -194,7 +192,9 @@ app.post(
     const questionId: string = req.params.questionID;
 
     if (request.user.role !== "mentor") {
-      return res.status(403).send("Only Mentors can post responses to questions.");
+      return res
+        .status(403)
+        .send("Only Mentors can post responses to questions.");
     }
 
     firestore
