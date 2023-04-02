@@ -142,7 +142,7 @@ app.get("/api/questions/:questionID", (req: Request, res: Response) => {
     .doc(req.params.questionID)
     .get()
     .then((doc: DocumentSnapshot) => {
-      return res.status(200).send(doc);
+      return res.status(200).send(doc.data());
     })
     .catch((err: any) => {
       console.error(err);
